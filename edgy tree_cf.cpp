@@ -93,3 +93,167 @@ int main()
 	return 0;
 
 }
+
+/*
+
+import UIKit
+import Combine
+
+final class ViewController: UIViewController {
+    // MARK: - UI
+    private let upperSetupCodeTextField = UITextField()
+    private let lowerSetupCodeTextField = UITextField()
+
+    // MARK: - Combine
+    private var cancellables = Set<AnyCancellable>()
+
+    // MARK: - Lifecycle
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemBackground
+
+        configureTextField(upperSetupCodeTextField, placeholder: "Enter setup code")
+        configureTextField(lowerSetupCodeTextField, placeholder: "Lower setup code")
+
+        view.addSubview(upperSetupCodeTextField)
+        view.addSubview(lowerSetupCodeTextField)
+
+        setupUI()
+        bindTextFields()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now()+5) {
+            self.upperSetupCodeTextField.text = "1234-567-890"
+            self.lowerSetupCodeTextField.text = "1234-567-8"
+            self.activateLowerTextField()
+        }
+    }
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        layoutTextFields()
+    }
+}
+
+// MARK: - UI Setup
+private extension ViewController {
+
+    func setupUI() {
+        upperSetupCodeTextField.delegate = self
+        lowerSetupCodeTextField.delegate = self
+
+        upperSetupCodeTextField.isUserInteractionEnabled = true
+        upperSetupCodeTextField.becomeFirstResponder()
+
+        lowerSetupCodeTextField.isHidden = true
+        lowerSetupCodeTextField.isUserInteractionEnabled = false
+    }
+
+    func configureTextField(_ textField: UITextField, placeholder: String) {
+        textField.placeholder = placeholder
+        textField.borderStyle = .roundedRect
+        textField.textAlignment = .center
+        textField.font = .systemFont(ofSize: 16)
+        textField.autocorrectionType = .no
+        textField.autocapitalizationType = .none
+        textField.returnKeyType = .done
+    }
+
+    func layoutTextFields() {
+        let width: CGFloat = 300
+        let height: CGFloat = 50
+        let spacing: CGFloat = 20
+
+        let x = (view.bounds.width - width) / 2
+        let y: CGFloat = 200
+
+        upperSetupCodeTextField.frame = CGRect(x: x, y: y, width: width, height: height)
+        lowerSetupCodeTextField.frame = CGRect(x: x, y: upperSetupCodeTextField.frame.maxY + spacing, width: width, height: height)
+    }
+}
+
+// MARK: - Combine Bindings
+private extension ViewController {
+    func bindTextFields() {
+        // Observe text changes for both fields
+        let upperPublisher = NotificationCenter.default.publisher(for: UITextField.textDidChangeNotification, object: upperSetupCodeTextField)
+            .compactMap { ($0.object as? UITextField)?.text }
+
+        let lowerPublisher = NotificationCenter.default.publisher(for: UITextField.textDidChangeNotification, object: lowerSetupCodeTextField)
+            .compactMap { ($0.object as? UITextField)?.text }
+
+        // Lower → Upper transition when lower becomes empty
+        lowerPublisher
+            .sink { [weak self] text in
+                guard let self = self else { return }
+                if text.isEmpty && !self.lowerSetupCodeTextField.isHidden {
+                    self.deactivateLowerTextField()
+                }
+            }
+            .store(in: &cancellables)
+
+        // Upper → Lower dynamic check: if user typed past 12, move overflow to lower
+        upperPublisher
+            .sink { [weak self] text in
+                guard let self = self else { return }
+                self.checkUpperOverflow(text: text)
+            }
+            .store(in: &cancellables)
+    }
+}
+
+// MARK: - State Transitions
+private extension ViewController {
+    func activateLowerTextField() {
+        guard lowerSetupCodeTextField.isHidden else { return }
+        upperSetupCodeTextField.isUserInteractionEnabled = false
+        upperSetupCodeTextField.resignFirstResponder()
+
+        lowerSetupCodeTextField.isHidden = false
+        lowerSetupCodeTextField.isUserInteractionEnabled = true
+        lowerSetupCodeTextField.becomeFirstResponder()
+    }
+
+    func deactivateLowerTextField() {
+        guard !lowerSetupCodeTextField.isHidden else { return }
+        lowerSetupCodeTextField.resignFirstResponder()
+        lowerSetupCodeTextField.isHidden = true
+        lowerSetupCodeTextField.isUserInteractionEnabled = false
+
+        upperSetupCodeTextField.isUserInteractionEnabled = true
+        upperSetupCodeTextField.becomeFirstResponder()
+    }
+
+    /// Handles moving 13th+ character from upper to lower field
+    func checkUpperOverflow(text: String) {
+        let upperLimit = 12
+        if text.count > upperLimit {
+            let overflowIndex = text.index(text.startIndex, offsetBy: upperLimit)
+            let overflow = String(text[overflowIndex...]) // characters beyond limit
+            upperSetupCodeTextField.text = String(text[..<overflowIndex]) // trim upper to 12
+            activateLowerTextField()
+            // Append overflow to lower
+            lowerSetupCodeTextField.text = (lowerSetupCodeTextField.text ?? "") + overflow
+        }
+    }
+}
+
+// MARK: - UITextFieldDelegate (Character Limits)
+extension ViewController: UITextFieldDelegate {
+    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
+
+        let currentText = textField.text ?? ""
+        let updatedLength = currentText.count - range.length + string.count
+
+        if textField == upperSetupCodeTextField {
+            return updatedLength <= 1000 // We allow large, actual overflow handled in checkUpperOverflow
+        }
+
+        if textField == lowerSetupCodeTextField {
+            return updatedLength <= 10
+        }
+
+        return true
+    }
+}
+
+*/
