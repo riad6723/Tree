@@ -96,191 +96,202 @@ int main()
 
 /*
 
-import UIKit
-import Combine
+//import UIKit
+//
+//// MARK: - First Page
+//class ViewController: UIViewController {
+//    
+//    override func viewDidLoad() {
+//        super.viewDidLoad()
+//        view.backgroundColor = .systemBackground
+//        title = "First Page"
+//        
+//        // 1. Create a button to trigger navigation
+//        let button = UIButton(type: .system)
+//        button.setTitle("Go to Second Page", for: .normal)
+//        button.frame = CGRect(x: 0, y: 0, width: 200, height: 50)
+//        button.center = view.center
+//        button.addTarget(self, action: #selector(navigateToSecondPage), for: .touchUpInside)
+//        
+//        view.addSubview(button)
+//    }
+//    
+//    // 2. Push the second view controller
+//    @objc private func navigateToSecondPage() {
+//        let secondVC = SecondViewController()
+//        self.navigationController?.pushViewController(secondVC, animated: true)
+//    }
+//}
+//
+//// MARK: - Second Page (With Intercepted Back Button)
+//class SecondViewController: UIViewController {
+//    
+//    override func viewDidLoad() {
+//        super.viewDidLoad()
+//        view.backgroundColor = .systemGroupedBackground
+//        title = "Second Page"
+//        
+//        setupNativeBackAction()
+//    }
+//    
+//    // Disable swipe-to-go-back to prevent bypassing the alert
+//    override func viewDidAppear(_ animated: Bool) {
+//        super.viewDidAppear(animated)
+//        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+//    }
+//    
+//    // Re-enable swipe-to-go-back when leaving
+//    override func viewWillDisappear(_ animated: Bool) {
+//        super.viewWillDisappear(animated)
+//        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+//    }
+//
+//    private func setupNativeBackAction() {
+//        // iOS 16+ native back button interception
+//        if #available(iOS 16.0, *) {
+//            self.navigationItem.backAction = UIAction { [weak self] _ in
+//                self?.showConfirmationAlert()
+//            }
+//        } else {
+//            print("Running on iOS 15 or lower - fallback needed here.")
+//        }
+//    }
+//
+//    private func showConfirmationAlert() {
+//        let alert = UIAlertController(
+//            title: "Are you sure?",
+//            message: "Any unsaved changes will be lost.",
+//            preferredStyle: .alert
+//        )
+//        
+//        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+//        
+//        alert.addAction(UIAlertAction(title: "OK", style: .destructive, handler: { [weak self] _ in
+//            self?.navigationController?.popViewController(animated: true)
+//        }))
+//        
+//        present(alert, animated: true, completion: nil)
+//    }
+//}
 
-final class ViewController: UIViewController {
-    // MARK: - UI
-    private let upperSetupCodeTextField = UITextField()
-    private let lowerSetupCodeTextField = UITextField()
-    
-    // MARK: - Combine
-    private var cancellables = Set<AnyCancellable>()
-    
-    // MARK: - Lifecycle
+
+
+import UIKit
+
+// MARK: - VC1 (The Root)
+class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .systemBackground
+        title = "VC 1"
         
-        configureTextField(upperSetupCodeTextField, placeholder: "xxxx-xxx-xxxx")
-        configureTextField(lowerSetupCodeTextField, placeholder: "xxxx-xxx-xx-x")
-        
-        view.addSubview(upperSetupCodeTextField)
-        view.addSubview(lowerSetupCodeTextField)
-        
-        setupUI()
-        bindTextFields()
-        
-//        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-//            self.upperSetupCodeTextField.text = "1234-567-8901"
-//            self.lowerSetupCodeTextField.text = "1234-567-89-0"
-//            self.activateLowerTextField()
-//        }
+        let button = UIButton(type: .system)
+        button.setTitle("Go to VC 2", for: .normal)
+        button.frame = CGRect(x: 0, y: 0, width: 200, height: 50)
+        button.center = view.center
+        button.addTarget(self, action: #selector(pushVC2), for: .touchUpInside)
+        view.addSubview(button)
     }
     
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-        layoutTextFields()
+    @objc private func pushVC2() {
+        navigationController?.pushViewController(VC2(), animated: true)
     }
 }
 
-// MARK: - UI Setup
-private extension ViewController {
-    func setupUI() {
-        upperSetupCodeTextField.delegate = self
-        lowerSetupCodeTextField.delegate = self
-        upperSetupCodeTextField.keyboardType = .numberPad
-        upperSetupCodeTextField.isUserInteractionEnabled = true
-        upperSetupCodeTextField.becomeFirstResponder()
+// MARK: - VC2 (The Middleman)
+class VC2: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemGray6
+        title = "VC 2"
         
-        lowerSetupCodeTextField.isHidden = true
-        lowerSetupCodeTextField.isUserInteractionEnabled = false
-        lowerSetupCodeTextField.keyboardType = .numberPad
+        let button = UIButton(type: .system)
+        button.setTitle("Go to VC 3", for: .normal)
+        button.frame = CGRect(x: 0, y: 0, width: 200, height: 50)
+        button.center = view.center
+        button.addTarget(self, action: #selector(pushVC3), for: .touchUpInside)
+        view.addSubview(button)
     }
     
-    func configureTextField(_ textField: UITextField, placeholder: String) {
-        textField.placeholder = placeholder
-        textField.borderStyle = .roundedRect
-        textField.textAlignment = .center
-        textField.font = .monospacedDigitSystemFont(ofSize: 18, weight: .medium) // Better for fixed formats
-        textField.autocorrectionType = .no
-        textField.returnKeyType = .done
-    }
-    
-    func layoutTextFields() {
-        let width: CGFloat = 300
-        let height: CGFloat = 50
-        let spacing: CGFloat = 20
-        let x = (view.bounds.width - width) / 2
-        let y: CGFloat = 200
-        
-        upperSetupCodeTextField.frame = CGRect(x: x, y: y, width: width, height: height)
-        lowerSetupCodeTextField.frame = CGRect(x: x, y: upperSetupCodeTextField.frame.maxY + spacing, width: width, height: height)
+    @objc private func pushVC3() {
+        navigationController?.pushViewController(VC3(), animated: true)
     }
 }
 
-// MARK: - Combine Bindings & Logic
-private extension ViewController {
-    func bindTextFields() {
-        // Upper Publisher
-        NotificationCenter.default.publisher(for: UITextField.textDidChangeNotification, object: upperSetupCodeTextField)
-            .compactMap { ($0.object as? UITextField)?.text }
-            .sink { [weak self] text in
-                guard let self = self else { return }
-                let digits = text.filter { $0.isNumber }
-                
-                // Format UI
-                self.upperSetupCodeTextField.text = self.format(digits: digits, pattern: "xxxx-xxx-xxxx")
-                
-                // Handle Overflow (if digits exceed 11)
-                if digits.count > 11 {
-                    self.checkUpperOverflow(digits: digits)
-                }
-            }
-            .store(in: &cancellables)
+// MARK: - VC3 (The Decision Maker)
+class VC3: UIViewController {
+    
+    // Toggle this boolean to test your two conditions!
+    var shouldShowPopup = false
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        view.backgroundColor = .systemGroupedBackground
+        title = "VC 3"
         
-        // Lower Publisher
-        NotificationCenter.default.publisher(for: UITextField.textDidChangeNotification, object: lowerSetupCodeTextField)
-            .compactMap { ($0.object as? UITextField)?.text }
-            .sink { [weak self] text in
-                guard let self = self else { return }
-                let digits = text.filter { $0.isNumber }
-                
-                // Format UI
-                self.lowerSetupCodeTextField.text = self.format(digits: digits, pattern: "xxxx-xxx-xx-x")
-                
-                // Transition back if empty
-                if digits.isEmpty && !self.lowerSetupCodeTextField.isHidden {
-                    self.deactivateLowerTextField()
-                }
-            }
-            .store(in: &cancellables)
+        setupNativeBackAction()
     }
     
-    /// Generic formatter that maps digits into a pattern
-    func format(digits: String, pattern: String) -> String {
-        var result = ""
-        var digitIndex = digits.startIndex
-        
-        for char in pattern {
-            guard digitIndex < digits.endIndex else { break }
-            if char == "x" {
-                result.append(digits[digitIndex])
-                digitIndex = digits.index(after: digitIndex)
-            } else {
-                result.append(char) // Likely a hyphen
+    // Prevent swiping back to VC2
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = false
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        self.navigationController?.interactivePopGestureRecognizer?.isEnabled = true
+    }
+
+    private func setupNativeBackAction() {
+        if #available(iOS 16.0, *) {
+            self.navigationItem.backAction = UIAction { [weak self] _ in
+                self?.handleBackTapped()
             }
         }
-        return result
+    }
+
+    private func handleBackTapped() {
+        if shouldShowPopup {
+            // Condition A: Show popup, then go to VC1
+            showConfirmationAlert()
+        } else {
+            // Condition B: No popup, go directly to VC1
+            goBackToVC1()
+        }
+    }
+
+    private func showConfirmationAlert() {
+        let alert = UIAlertController(
+            title: "Warning",
+            message: "Do you want to discard and return to the start?",
+            preferredStyle: .alert
+        )
+        
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        
+        alert.addAction(UIAlertAction(title: "OK", style: .destructive, handler: { [weak self] _ in
+            self?.goBackToVC1()
+        }))
+        
+        present(alert, animated: true, completion: nil)
     }
     
-    func checkUpperOverflow(digits: String) {
-        let limit = 11
-        let overflowDigits = String(digits.suffix(digits.count - limit))
-        let keptDigits = String(digits.prefix(limit))
+    // The routing magic
+    private func goBackToVC1() {
+        // Option 1: If VC1 is the very first screen in your entire Navigation Controller
+        //self.navigationController?.popToRootViewController(animated: true)
         
-        // Update Upper to its max formatted state
-        upperSetupCodeTextField.text = format(digits: keptDigits, pattern: "xxxx-xxx-xxxx")
+        //Option 2: If VC1 is NOT the root, but just somewhere earlier in the stack,
+        //you can search the stack for it and pop directly to it:
+         
+        if let vc1 = self.navigationController?.viewControllers.first(where: { $0 is ViewController }) {
+            self.navigationController?.popToViewController(vc1, animated: true)
+        }
         
-        activateLowerTextField()
-        
-        // Push overflow to lower and format it
-        let existingLower = (lowerSetupCodeTextField.text ?? "").filter { $0.isNumber }
-        let newLowerDigits = existingLower + overflowDigits
-        lowerSetupCodeTextField.text = format(digits: newLowerDigits, pattern: "xxxx-xxx-xx-x")
     }
 }
 
-// MARK: - State Transitions
-private extension ViewController {
-    func activateLowerTextField() {
-        guard lowerSetupCodeTextField.isHidden else { return }
-        
-        // 1. Prepare the lower field first
-        lowerSetupCodeTextField.isHidden = false
-        lowerSetupCodeTextField.isUserInteractionEnabled = true
-        
-        // 2. Transfer focus DIRECTLY (Do not call resignFirstResponder on upper)
-        lowerSetupCodeTextField.becomeFirstResponder()
-        
-        // 3. Clean up the upper field
-        upperSetupCodeTextField.isUserInteractionEnabled = false
-    }
-    
-    func deactivateLowerTextField() {
-        guard !lowerSetupCodeTextField.isHidden else { return }
-        
-        // 1. Enable the upper field first
-        upperSetupCodeTextField.isUserInteractionEnabled = true
-        
-        // 2. Transfer focus DIRECTLY
-        upperSetupCodeTextField.becomeFirstResponder()
-        
-        // 3. Clean up the lower field
-        lowerSetupCodeTextField.isHidden = true
-        lowerSetupCodeTextField.isUserInteractionEnabled = false
-    }
-}
-
-// MARK: - UITextFieldDelegate
-extension ViewController: UITextFieldDelegate {
-    func textField(_ textField: UITextField, shouldChangeCharactersIn range: NSRange, replacementString string: String) -> Bool {
-        // Prevent non-numeric entry via keyboard
-        let allowedCharacters = CharacterSet.decimalDigits
-        let characterSet = CharacterSet(charactersIn: string)
-        return allowedCharacters.isSuperset(of: characterSet)
-    }
-}
 
 */
 
